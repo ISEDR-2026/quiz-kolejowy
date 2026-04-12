@@ -56,11 +56,11 @@ if "index" not in st.session_state:
     st.session_state.start_time = None
     st.session_state.answers_log = []
 
-# ===== NAGŁÓWEK =====
+# ===== 🔥 NAGŁÓWEK =====
 st.markdown("""
-<h1 style='text-align:center; color:red;'>Baza pytań sprawdzających wiedzę na stanowisku</h1>
-<h2 style='text-align:center; color:red;'>Dyżurny Ruchu</h2>
-<h4 style='text-align:center; color:#1f77b4;'>Warszawa 2025 r.</h4>
+<h2 style='text-align:center; color:red;'>
+Baza pytań sprawdzających wiedzę na stanowisku Dyżurny Ruchu  (narazie 687z1249)
+</h2>
 """, unsafe_allow_html=True)
 
 # ===== START =====
@@ -118,7 +118,10 @@ else:
         mins = remaining // 60
         secs = remaining % 60
 
-        st.markdown(f"<h3 style='text-align:center;'>⏳ {mins:02d}:{secs:02d}</h3>", unsafe_allow_html=True)
+        st.markdown(
+            f"<h3 style='text-align:center;'>⏳ {mins:02d}:{secs:02d} | Pytanie {i+1} z {len(q_list)}</h3>",
+            unsafe_allow_html=True
+        )
 
     # ===== KONIEC =====
     if i >= len(q_list):
@@ -128,12 +131,7 @@ else:
         wrong = total - correct
         percent = int((correct / total) * 100)
 
-        # czas
-        if st.session_state.start_time:
-            elapsed = int(time.time() - st.session_state.start_time)
-        else:
-            elapsed = 0
-
+        elapsed = int(time.time() - st.session_state.start_time) if st.session_state.start_time else 0
         mins = elapsed // 60
         secs = elapsed % 60
 
@@ -141,9 +139,9 @@ else:
         st.markdown(f"""
         <div style='text-align:center; padding:20px; border-radius:10px; background:#111;'>
             <h2>Wynik: {correct} / {total} ({percent}%)</h2>
-            <p style='font-size:18px;'>✔ Poprawne: {correct}</p>
-            <p style='font-size:18px;'>❌ Błędne: {wrong}</p>
-            <p style='font-size:18px;'>⏱ Czas: {mins} min {secs} s</p>
+            <p>✔ Poprawne: {correct}</p>
+            <p>❌ Błędne: {wrong}</p>
+            <p>⏱ Czas: {mins} min {secs} s</p>
             <h3 style='color:{'lime' if percent>=80 else 'red'};'>
                 {'ZALICZONE' if percent>=80 else 'NIEZALICZONE'}
             </h3>
@@ -151,13 +149,9 @@ else:
         """, unsafe_allow_html=True)
 
         st.markdown("---")
+        st.subheader("📊 Przegląd odpowiedzi")
 
-        # ===== BŁĘDY =====
-        st.subheader("❌ Błędne pytania")
-
-        wrong_list = [x for x in st.session_state.answers_log if not x["correct"]]
-
-        for item in wrong_list:
+        for item in st.session_state.answers_log:
 
             st.markdown(f"### Pytanie {item['nr']}")
             st.write(item["q"])
