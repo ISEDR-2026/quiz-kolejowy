@@ -2,7 +2,7 @@ import streamlit as st
 from openpyxl import load_workbook
 import random
 
-HASLO = "kolej123"
+HASLO = "316b"
 
 if "auth" not in st.session_state:
     st.session_state.auth = False
