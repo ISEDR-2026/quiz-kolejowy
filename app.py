@@ -11,7 +11,7 @@ if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
-    st.title("🔐 Dostęp do quizu na dyżurnego ruchu")
+    st.title("🔐 Dostęp do quizu")
     password = st.text_input("Podaj hasło:", type="password")
 
     if st.button("Wejdź"):
@@ -55,6 +55,8 @@ if "index" not in st.session_state:
     st.session_state.mode = "learn"
     st.session_state.start_time = None
     st.session_state.answers_log = []
+    st.session_state.answered = False
+    st.session_state.last_choice = None
 
 # ===== NAGŁÓWEK =====
 st.markdown("""
@@ -99,6 +101,7 @@ if not st.session_state.started:
         st.session_state.index = 0
         st.session_state.score = 0
         st.session_state.answers_log = []
+        st.session_state.answered = False
         st.rerun()
 
 # ===== QUIZ =====
@@ -106,7 +109,7 @@ else:
     q_list = st.session_state.selected
     i = st.session_state.index
 
-    # ===== TIMER (EGZAMIN) =====
+    # ===== TIMER =====
     if st.session_state.mode == "exam":
         elapsed = int(time.time() - st.session_state.start_time)
         remaining = CZAS_EGZAMIN - elapsed
@@ -125,7 +128,6 @@ else:
 
     # ===== KONIEC =====
     if i >= len(q_list):
-
         total = len(q_list)
         correct = st.session_state.score
         wrong = total - correct
@@ -186,27 +188,39 @@ else:
             key=f"q_{i}"
         )
 
-        # ===== TRYB NAUKA (natychmiastowa odpowiedź) =====
+        # ===== NAUKA =====
         if st.session_state.mode == "learn":
 
-            correct = q["correct"]
+            if not st.session_state.answered:
 
-            for key, text in q["answers"].items():
+                if st.button("Zatwierdź"):
+                    st.session_state.answered = True
+                    st.session_state.last_choice = choice
 
-                if key == correct:
-                    st.markdown(f"<div style='background:#1e7e34;color:white;padding:8px;border-radius:6px;'>{key}) {text}</div>", unsafe_allow_html=True)
+                    if choice == q["correct"]:
+                        st.session_state.score += 1
 
-                elif key == choice:
-                    st.markdown(f"<div style='background:#c82333;color:white;padding:8px;border-radius:6px;'>{key}) {text}</div>", unsafe_allow_html=True)
+                    st.rerun()
 
-                else:
-                    st.write(f"{key}) {text}")
+            else:
+                correct = q["correct"]
+                selected = st.session_state.last_choice
 
-            if st.button("Następne"):
-                st.session_state.index += 1
-                st.rerun()
+                for key, text in q["answers"].items():
 
-        # ===== TRYB EGZAMIN =====
+                    if key == correct:
+                        st.markdown(f"<div style='background:#1e7e34;color:white;padding:8px;border-radius:6px;'>{key}) {text}</div>", unsafe_allow_html=True)
+                    elif key == selected:
+                        st.markdown(f"<div style='background:#c82333;color:white;padding:8px;border-radius:6px;'>{key}) {text}</div>", unsafe_allow_html=True)
+                    else:
+                        st.write(f"{key}) {text}")
+
+                if st.button("Następne"):
+                    st.session_state.index += 1
+                    st.session_state.answered = False
+                    st.rerun()
+
+        # ===== EGZAMIN =====
         else:
             if st.button("Zatwierdź"):
 
