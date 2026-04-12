@@ -3,7 +3,7 @@ from openpyxl import load_workbook
 import random
 
 # ===== HASŁO =====
-HASLO = "kolej123"  # <- zmień na swoje
+HASLO = "316b"
 
 if "auth" not in st.session_state:
     st.session_state.auth = False
@@ -55,6 +55,8 @@ if "index" not in st.session_state:
     st.session_state.started = False
     st.session_state.mode = "learn"
     st.session_state.selected = []
+    st.session_state.answered = False
+    st.session_state.last_choice = None
 
 # ===== START =====
 st.title("🚂 Quiz kolejowy")
@@ -81,6 +83,9 @@ if not st.session_state.started:
 
         st.session_state.mode = "learn" if mode == "Nauka" else "exam"
         st.session_state.started = True
+        st.session_state.index = 0
+        st.session_state.score = 0
+        st.session_state.answered = False
         st.rerun()
 
 # ===== QUIZ =====
@@ -108,20 +113,64 @@ else:
         st.markdown(f"### Pytanie {q['nr']}")
         st.markdown(f"**{q['q']}**")
 
+        # ===== WYBÓR =====
         choice = st.radio(
             "Wybierz odpowiedź:",
             list(q["answers"].keys()),
-            format_func=lambda x: f"{x}) {q['answers'][x]}"
+            format_func=lambda x: f"{x}) {q['answers'][x]}",
+            key=f"q_{i}"
         )
 
-        if st.button("Zatwierdź"):
-            if choice == q["correct"]:
-                st.session_state.score += 1
-                if st.session_state.mode == "learn":
-                    st.success("✔ Dobrze")
-            else:
-                if st.session_state.mode == "learn":
-                    st.error(f"❌ Źle (poprawna: {q['correct']})")
+        # ===== ZATWIERDZENIE =====
+        if not st.session_state.answered:
+            if st.button("Zatwierdź"):
+                st.session_state.answered = True
+                st.session_state.last_choice = choice
 
-            st.session_state.index += 1
-            st.rerun()
+                if choice == q["correct"]:
+                    st.session_state.score += 1
+
+                st.rerun()
+
+        # ===== WYNIK + PODŚWIETLENIE =====
+        else:
+            correct = q["correct"]
+            selected = st.session_state.last_choice
+
+            if st.session_state.mode == "learn":
+
+                st.write("### Wynik:")
+
+                for key, text in q["answers"].items():
+
+                    if key == correct:
+                        st.markdown(
+                            f"<div style='background-color:#1e7e34;padding:10px;border-radius:8px;color:white;margin-bottom:5px;'>"
+                            f"{key}) {text}</div>",
+                            unsafe_allow_html=True
+                        )
+
+                    elif key == selected:
+                        st.markdown(
+                            f"<div style='background-color:#c82333;padding:10px;border-radius:8px;color:white;margin-bottom:5px;'>"
+                            f"{key}) {text}</div>",
+                            unsafe_allow_html=True
+                        )
+
+                    else:
+                        st.markdown(
+                            f"<div style='background-color:#333;padding:10px;border-radius:8px;color:white;margin-bottom:5px;'>"
+                            f"{key}) {text}</div>",
+                            unsafe_allow_html=True
+                        )
+
+                if selected == correct:
+                    st.success("✔ Dobra odpowiedź")
+                else:
+                    st.error("❌ Zła odpowiedź")
+
+            # ===== NASTĘPNE =====
+            if st.button("Następne pytanie"):
+                st.session_state.index += 1
+                st.session_state.answered = False
+                st.rerun()
