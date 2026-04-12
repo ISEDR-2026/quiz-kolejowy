@@ -2,15 +2,13 @@ import streamlit as st
 from openpyxl import load_workbook
 import random
 
-# ===== HASŁO =====
-HASLO = "316b"
+HASLO = "kolej123"
 
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
     st.title("🔐 Dostęp do quizu")
-
     password = st.text_input("Podaj hasło:", type="password")
 
     if st.button("Wejdź"):
@@ -26,8 +24,6 @@ if not st.session_state.auth:
 wb = load_workbook("quiz.xlsx")
 ws = wb.active
 
-dzial = ws["C3"].value
-
 questions = []
 
 for row in ws.iter_rows(min_row=5):
@@ -42,7 +38,7 @@ for row in ws.iter_rows(min_row=5):
         continue
 
     questions.append({
-        "nr": nr,
+        "nr": int(nr),
         "q": q,
         "answers": {"a": a, "b": b, "c": c},
         "correct": correct.lower()
@@ -53,36 +49,71 @@ if "index" not in st.session_state:
     st.session_state.index = 0
     st.session_state.score = 0
     st.session_state.started = False
-    st.session_state.mode = "learn"
     st.session_state.selected = []
+    st.session_state.mode = "learn"
     st.session_state.answered = False
     st.session_state.last_choice = None
 
+# ===== 🔥 NOWY NAGŁÓWEK =====
+st.markdown("""
+<h1 style='text-align:center; color:red;'>
+Baza pytań sprawdzających wiedzę na stanowisku
+</h1>
+<h2 style='text-align:center; color:red;'>
+Dyżurny Ruchu
+</h2>
+<h4 style='text-align:center; color:#1f77b4; margin-top:20px;'>
+Warszawa 2025 r.
+</h4>
+""", unsafe_allow_html=True)
+
 # ===== START =====
-st.title("🚂 Quiz kolejowy")
-
 if not st.session_state.started:
-
-    st.subheader(f"Dział: {dzial}")
 
     mode = st.radio("Tryb:", ["Nauka", "Egzamin"])
 
     if mode == "Nauka":
-        count = st.selectbox("Liczba pytań:", [10, 25, "Wszystkie"])
+
+        option = st.selectbox(
+            "Tryb pytań:",
+            ["10", "25", "Od pytania"]
+        )
+
+        start_q = 1
+
+        if option == "Od pytania":
+            start_q = st.number_input(
+                "Od którego pytania zacząć?",
+                min_value=1,
+                max_value=len(questions),
+                value=1
+            )
+
     else:
         st.info(f"Liczba pytań: {len(questions)} | Czas: 30 min")
-        count = "Wszystkie"
 
     if st.button("Start"):
-        random.shuffle(questions)
 
-        if count == "Wszystkie":
-            st.session_state.selected = questions
+        if mode == "Nauka":
+
+            if option == "10":
+                random.shuffle(questions)
+                selected = questions[:10]
+
+            elif option == "25":
+                random.shuffle(questions)
+                selected = questions[:25]
+
+            elif option == "Od pytania":
+                selected = [q for q in questions if q["nr"] >= start_q]
+
         else:
-            st.session_state.selected = questions[:int(count)]
+            random.shuffle(questions)
+            selected = questions
 
-        st.session_state.mode = "learn" if mode == "Nauka" else "exam"
+        st.session_state.selected = selected
         st.session_state.started = True
+        st.session_state.mode = "learn" if mode == "Nauka" else "exam"
         st.session_state.index = 0
         st.session_state.score = 0
         st.session_state.answered = False
@@ -94,14 +125,10 @@ else:
     i = st.session_state.index
 
     if i >= len(q_list):
+
         percent = int((st.session_state.score / len(q_list)) * 100)
 
         st.success(f"Wynik: {st.session_state.score}/{len(q_list)} ({percent}%)")
-
-        if percent >= 80:
-            st.success("ZALICZONE ✅")
-        else:
-            st.error("NIEZALICZONE ❌")
 
         if st.button("Restart"):
             st.session_state.clear()
@@ -110,12 +137,11 @@ else:
     else:
         q = q_list[i]
 
-        # 🔥 NOWY WYGLĄD PYTANIA
         st.markdown(
             f"""
-            <div style='text-align:center; margin-bottom:20px;'>
-                <div style='font-size:18px; color:#aaa;'>Pytanie {q['nr']}</div>
-                <div style='font-size:28px; font-weight:bold; margin-top:10px;'>
+            <div style='text-align:center;'>
+                <div style='font-size:18px;color:#aaa;'>Pytanie {q['nr']}</div>
+                <div style='font-size:28px;font-weight:bold;margin-top:10px;'>
                     {q['q']}
                 </div>
             </div>
@@ -146,37 +172,18 @@ else:
 
             if st.session_state.mode == "learn":
 
-                st.write("### Wynik:")
-
                 for key, text in q["answers"].items():
 
                     if key == correct:
-                        st.markdown(
-                            f"<div style='background-color:#1e7e34;padding:10px;border-radius:8px;color:white;margin-bottom:5px;'>"
-                            f"{key}) {text}</div>",
-                            unsafe_allow_html=True
-                        )
+                        st.markdown(f"<div style='background:#1e7e34;padding:10px;border-radius:8px;color:white;margin-bottom:5px;'>{key}) {text}</div>", unsafe_allow_html=True)
 
                     elif key == selected:
-                        st.markdown(
-                            f"<div style='background-color:#c82333;padding:10px;border-radius:8px;color:white;margin-bottom:5px;'>"
-                            f"{key}) {text}</div>",
-                            unsafe_allow_html=True
-                        )
+                        st.markdown(f"<div style='background:#c82333;padding:10px;border-radius:8px;color:white;margin-bottom:5px;'>{key}) {text}</div>", unsafe_allow_html=True)
 
                     else:
-                        st.markdown(
-                            f"<div style='background-color:#333;padding:10px;border-radius:8px;color:white;margin-bottom:5px;'>"
-                            f"{key}) {text}</div>",
-                            unsafe_allow_html=True
-                        )
+                        st.markdown(f"<div style='background:#333;padding:10px;border-radius:8px;color:white;margin-bottom:5px;'>{key}) {text}</div>", unsafe_allow_html=True)
 
-                if selected == correct:
-                    st.success("✔ Dobra odpowiedź")
-                else:
-                    st.error("❌ Zła odpowiedź")
-
-            if st.button("Następne pytanie"):
+            if st.button("Następne"):
                 st.session_state.index += 1
                 st.session_state.answered = False
                 st.rerun()
