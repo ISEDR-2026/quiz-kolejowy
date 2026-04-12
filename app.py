@@ -11,7 +11,7 @@ if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
-    st.title("🔐 Dostęp do bazy pytań dla przyszłych Dyżurnych Ruchu")
+    st.title("🔐 Dostęp do bazy pytań dla przyszłych Dyżurnych Ruchu____pierwsze 687 z 1249(")
     password = st.text_input("Podaj hasło:", type="password")
 
     if st.button("Wejdź"):
