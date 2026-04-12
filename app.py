@@ -110,10 +110,19 @@ else:
     else:
         q = q_list[i]
 
-        st.markdown(f"### Pytanie {q['nr']}")
-        st.markdown(f"**{q['q']}**")
+        # 🔥 NOWY WYGLĄD PYTANIA
+        st.markdown(
+            f"""
+            <div style='text-align:center; margin-bottom:20px;'>
+                <div style='font-size:18px; color:#aaa;'>Pytanie {q['nr']}</div>
+                <div style='font-size:28px; font-weight:bold; margin-top:10px;'>
+                    {q['q']}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        # ===== WYBÓR =====
         choice = st.radio(
             "Wybierz odpowiedź:",
             list(q["answers"].keys()),
@@ -121,7 +130,6 @@ else:
             key=f"q_{i}"
         )
 
-        # ===== ZATWIERDZENIE =====
         if not st.session_state.answered:
             if st.button("Zatwierdź"):
                 st.session_state.answered = True
@@ -132,7 +140,6 @@ else:
 
                 st.rerun()
 
-        # ===== WYNIK + PODŚWIETLENIE =====
         else:
             correct = q["correct"]
             selected = st.session_state.last_choice
@@ -169,7 +176,6 @@ else:
                 else:
                     st.error("❌ Zła odpowiedź")
 
-            # ===== NASTĘPNE =====
             if st.button("Następne pytanie"):
                 st.session_state.index += 1
                 st.session_state.answered = False
