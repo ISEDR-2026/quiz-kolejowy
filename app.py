@@ -56,10 +56,10 @@ if "index" not in st.session_state:
     st.session_state.start_time = None
     st.session_state.answers_log = []
 
-# ===== 🔥 NAGŁÓWEK =====
+# ===== NAGŁÓWEK =====
 st.markdown("""
 <h2 style='text-align:center; color:red;'>
-Baza pytań sprawdzających wiedzę na stanowisku Dyżurny Ruchu  (narazie 687z1249)
+Baza pytań sprawdzających wiedzę na stanowisku Dyżurny Ruchu
 </h2>
 """, unsafe_allow_html=True)
 
@@ -106,7 +106,7 @@ else:
     q_list = st.session_state.selected
     i = st.session_state.index
 
-    # ===== TIMER =====
+    # ===== TIMER (EGZAMIN) =====
     if st.session_state.mode == "exam":
         elapsed = int(time.time() - st.session_state.start_time)
         remaining = CZAS_EGZAMIN - elapsed
@@ -135,9 +135,8 @@ else:
         mins = elapsed // 60
         secs = elapsed % 60
 
-        # ===== PODSUMOWANIE =====
         st.markdown(f"""
-        <div style='text-align:center; padding:20px; border-radius:10px; background:#111;'>
+        <div style='text-align:center; padding:20px; background:#111; border-radius:10px;'>
             <h2>Wynik: {correct} / {total} ({percent}%)</h2>
             <p>✔ Poprawne: {correct}</p>
             <p>❌ Błędne: {wrong}</p>
@@ -159,19 +158,9 @@ else:
             for key, text in item["answers"].items():
 
                 if key == item["correct_answer"]:
-                    st.markdown(
-                        f"<div style='background:#1e7e34;color:white;padding:8px;border-radius:6px;margin-bottom:4px;'>"
-                        f"{key}) {text}</div>",
-                        unsafe_allow_html=True
-                    )
-
+                    st.markdown(f"<div style='background:#1e7e34;color:white;padding:8px;border-radius:6px;'>{key}) {text}</div>", unsafe_allow_html=True)
                 elif key == item["selected"]:
-                    st.markdown(
-                        f"<div style='background:#c82333;color:white;padding:8px;border-radius:6px;margin-bottom:4px;'>"
-                        f"{key}) {text}</div>",
-                        unsafe_allow_html=True
-                    )
-
+                    st.markdown(f"<div style='background:#c82333;color:white;padding:8px;border-radius:6px;'>{key}) {text}</div>", unsafe_allow_html=True)
                 else:
                     st.write(f"{key}) {text}")
 
@@ -197,21 +186,43 @@ else:
             key=f"q_{i}"
         )
 
-        if st.button("Zatwierdź"):
+        # ===== TRYB NAUKA (natychmiastowa odpowiedź) =====
+        if st.session_state.mode == "learn":
 
-            is_correct = choice == q["correct"]
+            correct = q["correct"]
 
-            if is_correct:
-                st.session_state.score += 1
+            for key, text in q["answers"].items():
 
-            st.session_state.answers_log.append({
-                "nr": q["nr"],
-                "q": q["q"],
-                "answers": q["answers"],
-                "selected": choice,
-                "correct_answer": q["correct"],
-                "correct": is_correct
-            })
+                if key == correct:
+                    st.markdown(f"<div style='background:#1e7e34;color:white;padding:8px;border-radius:6px;'>{key}) {text}</div>", unsafe_allow_html=True)
 
-            st.session_state.index += 1
-            st.rerun()
+                elif key == choice:
+                    st.markdown(f"<div style='background:#c82333;color:white;padding:8px;border-radius:6px;'>{key}) {text}</div>", unsafe_allow_html=True)
+
+                else:
+                    st.write(f"{key}) {text}")
+
+            if st.button("Następne"):
+                st.session_state.index += 1
+                st.rerun()
+
+        # ===== TRYB EGZAMIN =====
+        else:
+            if st.button("Zatwierdź"):
+
+                is_correct = choice == q["correct"]
+
+                if is_correct:
+                    st.session_state.score += 1
+
+                st.session_state.answers_log.append({
+                    "nr": q["nr"],
+                    "q": q["q"],
+                    "answers": q["answers"],
+                    "selected": choice,
+                    "correct_answer": q["correct"],
+                    "correct": is_correct
+                })
+
+                st.session_state.index += 1
+                st.rerun()
