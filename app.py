@@ -3,7 +3,7 @@ from openpyxl import load_workbook
 import random
 import time
 
-HASLO = "kolej123"
+HASLO = "316b"
 CZAS_EGZAMIN = 30 * 60
 
 # ===== LOGOWANIE =====
