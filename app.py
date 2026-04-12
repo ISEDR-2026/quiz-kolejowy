@@ -11,7 +11,7 @@ if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
-    st.title("🔐 Dostęp do bazy pytań dla przyszłych Dyżurnych Ruchu____pierwsze 687 z 1249(")
+    st.title("🔐 Dostęp do bazy pytań dla przyszłych Dyżurnych Ruchu")
     password = st.text_input("Podaj hasło:", type="password")
 
     if st.button("Wejdź"):
@@ -61,7 +61,7 @@ if "index" not in st.session_state:
 # ===== NAGŁÓWEK =====
 st.markdown("""
 <h2 style='text-align:center; color:red;'>
-Baza pytań sprawdzających wiedzę na stanowisku Dyżurny Ruchu
+Baza pytań sprawdzających wiedzę na stanowisku Dyżurny Ruchu ____pierwsze 687 z 1249
 </h2>
 """, unsafe_allow_html=True)
 
