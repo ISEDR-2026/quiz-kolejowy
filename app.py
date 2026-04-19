@@ -46,6 +46,17 @@ button[kind="secondary"], button[kind="primary"] {
     margin-top:10%;
     text-align:center;
 }
+
+/* ===== NOWE: RESPONSYWNE OBRAZKI ===== */
+img {
+    width: auto;
+    height: auto;
+    max-width: 220px;
+}
+
+.img-big img {
+    max-width: 500px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -55,11 +66,8 @@ HASLO = "szczecin26"
 
 BIG_IMAGES = {1157,1158,1159,1160,1161,1162,1163,1164,1165,1166,1169,1170,1171}
 
-def get_img_width(nr):
-    base = 200
-    if nr in BIG_IMAGES:
-        return int(base * 2.5)
-    return base
+def is_big_image(nr):
+    return nr in BIG_IMAGES
 
 def norm(txt):
     if not txt:
@@ -210,7 +218,12 @@ else:
             if item["img"] == "img":
                 path = f"image/{item['nr']}.png"
                 if os.path.exists(path):
-                    st.image(path, width=get_img_width(item['nr']))
+                    if is_big_image(item['nr']):
+                        st.markdown("<div class='img-big'>", unsafe_allow_html=True)
+                        st.image(path)
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    else:
+                        st.image(path)
 
             for k, txt in item["answers"].items():
                 if k == item["correct_answer"]:
@@ -244,7 +257,12 @@ else:
         if q["img"] == "img":
             path = f"image/{q['nr']}.png"
             if os.path.exists(path):
-                st.image(path, width=get_img_width(q['nr']))
+                if is_big_image(q['nr']):
+                    st.markdown("<div class='img-big'>", unsafe_allow_html=True)
+                    st.image(path)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                else:
+                    st.image(path)
 
         if f"shuffled_{i}" not in st.session_state:
             items = list(q["answers"].items())
