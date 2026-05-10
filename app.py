@@ -94,20 +94,20 @@ if not st.session_state.auth:
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
-# ===== WCZYTANIE (POPRAWIONE LOGICZNIE POPRZEZ CACHE) =====
+# ===== WCZYTANIE (POPRAWKA: CACHE ZABEZPIECZA PRZED BŁĘDAMI ODCZYTU) =====
 @st.cache_data
-def get_all_questions():
+def load_all_questions_cached():
     BASE_DIR = os.getcwd()
     excel_path = os.path.join(BASE_DIR, "quiz.xlsx")
     wb = load_workbook(excel_path, data_only=True)
     ws = wb.active
-
-    loaded_questions = []
+    
+    data = []
     for row in ws.iter_rows(min_row=5):
-        if row[5].value is None:
+        if row[1].value is None or row[5].value is None:
             continue
-
-        loaded_questions.append({
+            
+        data.append({
             "nr": int(row[0].value) if row[0].value else 0,
             "q": row[1].value,
             "answers": {"a": row[2].value, "b": row[3].value, "c": row[4].value},
@@ -115,9 +115,9 @@ def get_all_questions():
             "img": row[6].value if len(row) > 6 else None,
             "section": norm(row[7].value if len(row) > 7 else "")
         })
-    return loaded_questions
+    return data
 
-questions = get_all_questions()
+questions = load_all_questions_cached()
 
 def filter_sections(q_list, selected):
     if selected == "Wszystkie":
@@ -198,10 +198,10 @@ else:
     i = st.session_state.index
     finished = i >= len(q_list)
 
-    st.progress(i / len(q_list) if len(q_list) > 0 else 1)
+    if not finished:
+        st.progress(i / len(q_list))
 
     if finished:
-
         total = len(q_list)
         correct = st.session_state.score
         percent = int((correct / total) * 100) if total > 0 else 0
@@ -228,12 +228,7 @@ else:
 
         if st.button("Restart"):
             st.session_state.update({
-                "index": 0,
-                "score": 0,
-                "started": False,
-                "selected": [],
-                "answers_log": [],
-                "answered": False
+                "index": 0, "score": 0, "started": False, "selected": [], "answers_log": [], "answered": False
             })
             st.rerun()
 
@@ -252,7 +247,7 @@ else:
             if os.path.exists(path):
                 st.image(path, width=get_img_width(q['nr']))
 
-        # Stabilne mieszanie odpowiedzi zapisane w sesji
+        # Stabilne mieszanie odpowiedzi - raz na pytanie
         if f"shuffled_{i}" not in st.session_state:
             items = list(q["answers"].items())
             random.shuffle(items)
@@ -269,61 +264,35 @@ else:
         )
 
         if st.session_state.mode == "learn":
-
             if not st.session_state.answered:
                 if st.button("Zatwierdź"):
                     is_correct = choice == q["correct"]
-
-                    if is_correct:
-                        st.session_state.score += 1
-
+                    if is_correct: st.session_state.score += 1
                     st.session_state.answers_log.append({
-                        "nr": q["nr"],
-                        "q": q["q"],
-                        "answers": dict(shuffled),
-                        "selected": choice,
-                        "correct_answer": q["correct"],
-                        "correct": is_correct,
-                        "section": q["section"],
-                        "img": q["img"]
+                        "nr": q["nr"], "q": q["q"], "answers": dict(shuffled), "selected": choice,
+                        "correct_answer": q["correct"], "correct": is_correct, "section": q["section"], "img": q["img"]
                     })
-
                     st.session_state.last_choice = choice
                     st.session_state.answered = True
                     st.rerun()
-
             else:
                 for k, txt in dict(shuffled).items():
                     cls = "answer"
-                    if k == q["correct"]:
-                        cls += " correct"
-                    elif k == st.session_state.last_choice:
-                        cls += " wrong"
-
+                    if k == q["correct"]: cls += " correct"
+                    elif k == st.session_state.last_choice: cls += " wrong"
                     st.markdown(f"<div class='{cls}'>{txt}</div>", unsafe_allow_html=True)
 
                 if st.button("➡ Dalej"):
                     st.session_state.index += 1
                     st.session_state.answered = False
                     st.rerun()
-
         else:
             if st.button("Zatwierdź"):
-                is_correct = choice == q["correct"]
-
-                if is_correct:
-                    st.session_state.score += 1
-
+                is_correct = (choice == q["correct"])
+                if is_correct: st.session_state.score += 1
                 st.session_state.answers_log.append({
-                    "nr": q["nr"],
-                    "q": q["q"],
-                    "answers": dict(shuffled),
-                    "selected": choice,
-                    "correct_answer": q["correct"],
-                    "correct": is_correct,
-                    "section": q["section"],
-                    "img": q["img"]
+                    "nr": q["nr"], "q": q["q"], "answers": dict(shuffled), "selected": choice,
+                    "correct_answer": q["correct"], "correct": is_correct, "section": q["section"], "img": q["img"]
                 })
-
                 st.session_state.index += 1
                 st.rerun()
