@@ -5,7 +5,7 @@ import os
 
 st.set_page_config(layout="wide")
 
-# ===== STYLE (1:1 Z TWOIM ORYGINAŁEM) =====
+# ===== STYLE =====
 st.markdown("""
 <style>
 .card {background:#1c1f26;padding:20px;border-radius:15px;margin-bottom:20px;}
@@ -13,9 +13,21 @@ st.markdown("""
 .question-text {font-size:20px;font-weight:bold;}
 div[role="radiogroup"] > label {font-size:18px !important;padding:10px !important;}
 button[kind="secondary"], button[kind="primary"] {font-size:18px !important;padding:10px 20px !important;border-radius:10px !important;}
-.answer {padding:10px;border-radius:10px;margin:5px 0;background:#2a2e38;}
+
+/* Poprawka stylu odpowiedzi, aby tekst był w pełni widoczny */
+.answer {
+    padding:12px;
+    border-radius:10px;
+    margin:8px 0;
+    background:#2a2e38;
+    line-height:1.4;
+    height: auto !important;
+    min-height: 40px;
+    word-wrap: break-word;
+}
 .correct {background:#2ecc71 !important;color:white;}
 .wrong {background:#e74c3c !important;color:white;}
+
 .login-box {background:#1c1f26;padding:40px;border-radius:15px;width:400px;margin:auto;margin-top:10%;text-align:center;}
 </style>
 """, unsafe_allow_html=True)
@@ -72,13 +84,12 @@ def load_questions():
 
 all_questions = load_questions()
 
-# ===== RESET SYSTEM (KLUCZ DO ROZWIĄZANIA PROBLEMU) =====
+# ===== RESET SYSTEM =====
 def hard_reset():
-    # Czyścimy wszystko oprócz autoryzacji
     for key in list(st.session_state.keys()):
         if key != "auth":
             del st.session_state[key]
-    st.cache_data.clear() # Czyścimy pamięć podręczną, by wymusić świeży odczyt
+    st.cache_data.clear()
     st.rerun()
 
 # ===== INICJALIZACJA SESJI =====
@@ -124,17 +135,25 @@ else:
     idx = st.session_state.index
     
     if idx >= len(q_list):
-        # PODSUMOWANIE
+        # PODSUMOWANIE (POPRAWIONE WYŚWIETLANIE)
         st.success(f"Koniec! Wynik: {st.session_state.score}/{len(q_list)}")
         if st.button("Zrestartuj aplikację (Pełny Reset)"):
             hard_reset()
             
         for log in st.session_state.answers_log:
             with st.expander(f"Pytanie {log['nr']} - {'✅ OK' if log['correct'] else '❌ BŁĄD'}"):
-                st.write(log['q'])
+                st.markdown(f"**{log['q']}**")
+                if log["img"] == "img":
+                    img_p = os.path.join("image", f"{log['nr']}.png")
+                    if os.path.exists(img_p): st.image(img_p, width=get_img_width(log['nr']))
+                
+                # Renderowanie odpowiedzi w podsumowaniu z poprawionym stylem
                 for k, v in log['answers'].items():
-                    color = "green" if k == log['correct_answer'] else ("red" if k == log['selected'] else "white")
-                    st.write(f":{color}[{k}) {v}]")
+                    c_class = "answer"
+                    if k == log['correct_answer']: c_class += " correct"
+                    elif k == log['selected'] and not log['correct']: c_class += " wrong"
+                    
+                    st.markdown(f"<div class='{c_class}'>{k}) {v}</div>", unsafe_allow_html=True)
     else:
         q = q_list[idx]
         st.progress(idx / len(q_list))
@@ -144,7 +163,6 @@ else:
             img_p = os.path.join("image", f"{q['nr']}.png")
             if os.path.exists(img_p): st.image(img_p, width=get_img_width(q['nr']))
 
-        # Losowanie kolejności odpowiedzi (raz na pytanie)
         if f"shuf_{idx}" not in st.session_state:
             items = list(q["answers"].items())
             random.shuffle(items)
@@ -159,7 +177,7 @@ else:
                 if st.button("Zatwierdź"):
                     correct = choice == q["correct"]
                     if correct: st.session_state.score += 1
-                    st.session_state.answers_log.append({"nr":q["nr"], "q":q["q"], "answers":q["answers"], "selected":choice, "correct_answer":q["correct"], "correct":correct})
+                    st.session_state.answers_log.append({"nr":q["nr"], "q":q["q"], "answers":q["answers"], "selected":choice, "correct_answer":q["correct"], "correct":correct, "img": q["img"]})
                     st.session_state.answered = True
                     st.session_state.last_choice = choice
                     st.rerun()
@@ -177,6 +195,6 @@ else:
             if st.button("Zatwierdź odpowiedź"):
                 correct = choice == q["correct"]
                 if correct: st.session_state.score += 1
-                st.session_state.answers_log.append({"nr":q["nr"], "q":q["q"], "answers":q["answers"], "selected":choice, "correct_answer":q["correct"], "correct":correct})
+                st.session_state.answers_log.append({"nr":q["nr"], "q":q["q"], "answers":q["answers"], "selected":choice, "correct_answer":q["correct"], "correct":correct, "img": q["img"]})
                 st.session_state.index += 1
                 st.rerun()
